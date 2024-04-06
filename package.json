@@ -1,0 +1,104 @@
+{
+  "name": "cmake-tools-build-wrapper",
+  "displayName": "cmake-build",
+  "publisher": "sr-team",
+  "description": "Wrapper for cmake-tools to open output on build fails",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.78.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cmake-tools-build-wrapper.clean",
+        "title": "cmake-build: Clean"
+      },
+      {
+        "command": "cmake-tools-build-wrapper.build",
+        "title": "cmake-build: Build"
+      },
+      {
+        "command": "cmake-tools-build-wrapper.install",
+        "title": "cmake-build: Install"
+      },
+      {
+        "command": "cmake-tools-build-wrapper.configure",
+        "title": "cmake-build: Configure"
+      },
+      {
+        "command": "cmake-tools-build-wrapper.reconfigure",
+        "title": "cmake-build: Reconfigure"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "cmake-tools-build-wrapper.build",
+        "key": "ctrl+b",
+        "when": "!cmake:hideBuildCommand && cmake:enableFullFeatureSet"
+      },
+      {
+        "command": "cmake-tools-build-wrapper.install",
+        "key": "f8",
+        "when": "!cmake:hideBuildCommand && cmake:enableFullFeatureSet"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "CMake Tools Build Wrapper",
+      "properties": {
+        "cmake-tools-build-wrapper.openOutput": {
+          "type": "boolean",
+          "description": "Automatically open output window on fails.",
+          "default": true
+        },
+        "cmake-tools-build-wrapper.outputView": {
+          "type": "string",
+          "description": "Output window name",
+          "default": "#1-CMake/Build"
+        },
+        "cmake-tools-build-wrapper.notifyFails": {
+          "type": "boolean",
+          "description": "Show notification on fails",
+          "default": true
+        },
+        "cmake-tools-build-wrapper.notifySuccess": {
+          "type": "boolean",
+          "description": "Show notification on success",
+          "default": true
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:package": "npm run compile && vsce package",
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.78.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "@typescript-eslint/eslint-plugin": "^7.4.0",
+    "@typescript-eslint/parser": "^7.4.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.3.3",
+    "@vscode/test-cli": "^0.0.8",
+    "@vscode/test-electron": "^2.3.9",
+    "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "vscode-cmake-tools": "^1.1.0"
+  },
+  "extensionDependencies": [
+    "ms-vscode.cmake-tools"
+  ]
+}
