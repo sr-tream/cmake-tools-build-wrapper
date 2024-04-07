@@ -5,6 +5,28 @@ let cmakeToolsApi: api.CMakeToolsApi | undefined = undefined;
 let cmakeProjectUri: vscode.Uri | undefined = undefined;
 let cmakeProjectWatcher: vscode.Disposable | undefined = undefined;
 
+async function openCMakeOutput(): Promise<void> {
+	const config = vscode.workspace.getConfiguration('cmake-tools-build-wrapper');
+	const baseCommand = 'workbench.action.output.show.extension-output-ms-vscode.cmake-tools';
+	vscode.commands.getCommands(true).then((commands) => {
+		const outputView = config.get<string>('outputView') || '';
+		for (const command of commands) {
+			if (!command.startsWith(baseCommand)) continue;
+
+			if (outputView.length > 0 && command.endsWith(`-${outputView}`)) {
+				vscode.commands.executeCommand(command);
+				return;
+			}
+			else if (command.indexOf(`-CMake/`) > baseCommand.length) {
+				vscode.commands.executeCommand(command);
+				return;
+			}
+		}
+		commands.forEach((command) => {
+		});
+	});
+}
+
 enum CMakeAction {
 	Clean = 'clean',
 	Build = 'build',
@@ -27,24 +49,7 @@ async function withErrorCheck(name: string, action: () => Promise<void>) {
 				vscode.window.showErrorMessage(`CMake Tools ${error}`);
 			const openOutput = config.get<boolean>('openOutput') || false;
 			if (openOutput) {
-				const baseCommand = 'workbench.action.output.show.extension-output-ms-vscode.cmake-tools';
-				vscode.commands.getCommands(true).then((commands) => {
-					const outputView = config.get<string>('outputView') || '';
-					for (const command of commands) {
-						if (!command.startsWith(baseCommand)) continue;
-
-						if (outputView.length > 0 && command.endsWith(`-${outputView}`)) {
-							vscode.commands.executeCommand(command);
-							return;
-						}
-						else if (command.indexOf(`-CMake/`) > baseCommand.length) {
-							vscode.commands.executeCommand(command);
-							return;
-						}
-					}
-					commands.forEach((command) => {
-					});
-				});
+				openCMakeOutput();
 			}
 		});
 }
@@ -99,6 +104,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('cmake-tools-build-wrapper.install', () => { doCmakeAction(CMakeAction.Install) }));
 	context.subscriptions.push(vscode.commands.registerCommand('cmake-tools-build-wrapper.configure', () => { doCmakeAction(CMakeAction.Configure) }));
 	context.subscriptions.push(vscode.commands.registerCommand('cmake-tools-build-wrapper.reconfigure', () => { doCmakeAction(CMakeAction.Reconfigure) }));
+	context.subscriptions.push(vscode.commands.registerCommand('cmake-tools-build-wrapper.output', () => { openCMakeOutput() }));
 }
 
 export function deactivate() {
