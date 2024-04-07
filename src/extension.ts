@@ -10,20 +10,24 @@ async function openCMakeOutput(): Promise<void> {
 	const baseCommand = 'workbench.action.output.show.extension-output-ms-vscode.cmake-tools';
 	vscode.commands.getCommands(true).then((commands) => {
 		const outputView = config.get<string>('outputView') || '';
+		if (outputView.length > 0) {
+			for (const command of commands) {
+				if (!command.startsWith(baseCommand)) continue;
+
+				if (command.endsWith(`-${outputView}`)) {
+					vscode.commands.executeCommand(command);
+					return;
+				}
+			}
+		}
 		for (const command of commands) {
 			if (!command.startsWith(baseCommand)) continue;
 
-			if (outputView.length > 0 && command.endsWith(`-${outputView}`)) {
-				vscode.commands.executeCommand(command);
-				return;
-			}
-			else if (command.indexOf(`-CMake/`) > baseCommand.length) {
+			if (command.indexOf(`-CMake/`) > baseCommand.length) {
 				vscode.commands.executeCommand(command);
 				return;
 			}
 		}
-		commands.forEach((command) => {
-		});
 	});
 }
 
