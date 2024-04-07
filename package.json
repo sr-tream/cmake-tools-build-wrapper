@@ -4,7 +4,7 @@
   "publisher": "sr-team",
   "description": "Wrapper for cmake-tools to open output on build fails",
   "repository": "https://github.com/sr-tream/cmake-tools-build-wrapper",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.78.0"
   },
@@ -60,7 +60,7 @@
         "cmake-tools-build-wrapper.outputView": {
           "type": "string",
           "description": "Output window name",
-          "default": "#1-CMake/Build"
+          "default": "CMake/Build"
         },
         "cmake-tools-build-wrapper.notifyFails": {
           "type": "boolean",
