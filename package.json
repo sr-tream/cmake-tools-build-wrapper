@@ -4,7 +4,7 @@
   "publisher": "sr-team",
   "description": "Wrapper for cmake-tools to open output on build fails",
   "repository": "https://github.com/sr-tream/cmake-tools-build-wrapper",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "keywords": [
     "cmake",
     "build",
@@ -62,32 +62,126 @@
         "when": "!cmake:hideBuildCommand && cmake:enableFullFeatureSet"
       }
     ],
-    "configuration": {
-      "type": "object",
-      "title": "CMake Tools Build Wrapper",
-      "properties": {
-        "cmake-tools-build-wrapper.openOutput": {
-          "type": "boolean",
-          "description": "Automatically open output window on fails.",
-          "default": true
-        },
-        "cmake-tools-build-wrapper.outputView": {
-          "type": "string",
-          "description": "Output window name",
-          "default": "CMake/Build"
-        },
-        "cmake-tools-build-wrapper.notifyFails": {
-          "type": "boolean",
-          "description": "Show notification on fails",
-          "default": true
-        },
-        "cmake-tools-build-wrapper.notifySuccess": {
-          "type": "boolean",
-          "description": "Show notification on success",
-          "default": true
+    "configuration": [
+      {
+        "title": "Open output window on fails",
+        "properties": {
+          "cmake-tools-build-wrapper.openOutput": {
+            "type": "boolean",
+            "description": "Automatically open output window on fails.",
+            "default": true,
+            "order": 0
+          },
+          "cmake-tools-build-wrapper.outputView": {
+            "type": "string",
+            "description": "Output window name",
+            "default": "CMake/Build",
+            "order": 1
+          }
+        }
+      },
+      {
+        "title": "Notifications",
+        "properties": {
+          "cmake-tools-build-wrapper.notifyFails": {
+            "type": "boolean",
+            "description": "Show notification on fails",
+            "default": true,
+            "order": 0
+          },
+          "cmake-tools-build-wrapper.notifySuccess": {
+            "type": "boolean",
+            "description": "Show notification on success",
+            "default": true,
+            "order": 1
+          },
+          "cmake-tools-build-wrapper.notifyProvider": {
+            "type": "string",
+            "description": "Provider to show notifications",
+            "enum": [
+              "Default",
+              "VSCode API",
+              "Native Notifications",
+              "VSCode API/Native Notifications",
+              "Custom provider",
+              "Custom provider/Native Notifications"
+            ],
+            "markdownEnumDescriptions": [
+              "Equals to `VSCode API/Native Notifications` for Linux and `VSCode API` for otherwise.",
+              "Use VSCode API to show notifications.",
+              "**[Unix-only]**\n\nUse `notify-send` to show native notifications (Linux/MacOS).",
+              "**[Unix-only]**\n\nVSCode API when window is focused, otherwise use `notify-send`.",
+              "Use custom provider to show notifications.",
+              "**[Unix-only]**\n\nCustom notification provider when window is focused, otherwise use `notify-send`."
+            ],
+            "default": "Default",
+            "order": 2
+          }
+        }
+      },
+      {
+        "title": "Custom notifications provider",
+        "properties": {
+          "cmake-tools-build-wrapper.customNotifyProvider.ProviderCommand": {
+            "type": "string",
+            "markdownDescription": "VSCode command to call custom notification provider.\n\nRequires `cmake-tools-build-wrapper.notifyProvider` set to `Custom provider`.",
+            "default": "",
+            "order": 0
+          },
+          "cmake-tools-build-wrapper.customNotifyProvider.Arguments": {
+            "type": "string",
+            "markdownDescription": "Arguments to pass to custom notification provider.",
+            "enum": [
+              "messageOnly",
+              "titleThenMessage",
+              "messageThenTitle"
+            ],
+            "markdownEnumDescriptions": [
+              "Pass only message to provider.",
+              "Pass title and message to provider.\n\nFirst argument is treated as title, second - as message.",
+              "Pass message and title to provider.\n\nFirst argument is treated as message, second - as title."
+            ],
+            "default": "messageOnly",
+            "order": 1
+          }
+        }
+      },
+      {
+        "title": "Notify-send configurations",
+        "properties": {
+          "cmake-tools-build-wrapper.notifySend.Path": {
+            "type": "string",
+            "markdownDescription": "**[Unix-only]**\n\nPath to `notify-send`\n\nBy default `notify-send` searched in `$PATH`.",
+            "default": "notify-send",
+            "order": 0
+          },
+          "cmake-tools-build-wrapper.notifySend.ShowTime": {
+            "type": "integer",
+            "markdownDescription": "**[Unix-only]**\n\nTime to show notification in milliseconds.\n\n Value `0` - infinity time (need to click on notification to hide).",
+            "default": 10000,
+            "order": 1
+          },
+          "cmake-tools-build-wrapper.notifySend.CriticalUrgencyForFails": {
+            "type": "boolean",
+            "markdownDescription": "**[Unix-only]**\n\nUse critical urgency for fails notifications.",
+            "default": false,
+            "order": 2
+          },
+          "cmake-tools-build-wrapper.notifySend.IconSuccess": {
+            "type": "string",
+            "markdownDescription": "**[Unix-only]**\n\nPath to icon for success notifications.",
+            "default": "",
+            "order": 3
+          },
+          "cmake-tools-build-wrapper.notifySend.IconFails": {
+            "type": "string",
+            "markdownDescription": "**[Unix-only]**\n\nPath to icon for fails notifications.",
+            "default": "",
+            "order": 4
+          }
         }
       }
-    }
+    ]
   },
   "scripts": {
     "vscode:package": "npm run compile && vsce package",
