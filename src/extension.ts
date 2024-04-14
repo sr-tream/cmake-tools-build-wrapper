@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as api from 'vscode-cmake-tools';
+import { CMakeToolsBuildWrapper } from './api';
 import { showNotification, NotifyType } from './notifications';
 
 let cmakeToolsApi: api.CMakeToolsApi | undefined = undefined;
@@ -12,7 +13,7 @@ export async function getExtensionPath(): Promise<string> {
 }
 
 async function openCMakeOutput(): Promise<void> {
-	const config = vscode.workspace.getConfiguration('cmake-tools-build-wrapper');
+	const config = vscode.workspace.getConfiguration(CMakeToolsBuildWrapper.EXTENSION_NAME);
 	const baseCommand = 'workbench.action.output.show.extension-output-ms-vscode.cmake-tools';
 	vscode.commands.getCommands(true).then((commands) => {
 		const outputView = config.get<string>('outputView', '');
@@ -45,23 +46,58 @@ enum CMakeAction {
 	Reconfigure = 'reconfigure',
 }
 
+class ActiveCMakeAction implements vscode.Disposable {
+	private static actions: string[] = [];
+	private name: string = '';
+
+	constructor(name: string) {
+		const index = ActiveCMakeAction.actions.indexOf(name);
+		if (index > -1) {
+			throw new Error(`CMake action "${name}" already in progress`);
+		}
+
+		this.name = name;
+		ActiveCMakeAction.actions.push(name);
+	}
+
+	dispose(): void {
+		const index = ActiveCMakeAction.actions.indexOf(this.name);
+		if (index > -1) {
+			ActiveCMakeAction.actions.splice(index, 1);
+		}
+	}
+
+	static async getActiveActions(): Promise<string[]> {
+		return ActiveCMakeAction.actions;
+	}
+}
+
 async function withErrorCheck(name: string, action: () => Promise<void>) {
-	const config = vscode.workspace.getConfiguration('cmake-tools-build-wrapper');
-	action()
-		.then(() => {
-			const notifySuccess = config.get<boolean>('notifySuccess', false);
-			if (notifySuccess)
-			{ showNotification(`${name} completed`, NotifyType.Success); }
-		})
-		.catch((error) => {
-			const notifyFails = config.get<boolean>('notifyFails', false);
-			if (notifyFails)
-			{ showNotification(`${error}`, NotifyType.Fail); }
-			const openOutput = config.get<boolean>('openOutput', false);
-			if (openOutput) {
-				openCMakeOutput();
-			}
-		});
+	try {
+		const activeAction = new ActiveCMakeAction(name);
+		const config = vscode.workspace.getConfiguration(CMakeToolsBuildWrapper.EXTENSION_NAME);
+		action()
+			.then(() => {
+				const notifySuccess = config.get<boolean>('notifySuccess', false);
+				if (notifySuccess) {
+					showNotification(`${name} completed`, NotifyType.Success);
+				}
+				activeAction.dispose();
+			})
+			.catch((error) => {
+				const notifyFails = config.get<boolean>('notifyFails', false);
+				if (notifyFails) {
+					showNotification(`${error}`, NotifyType.Fail);
+				}
+				const openOutput = config.get<boolean>('openOutput', false);
+				if (openOutput) {
+					openCMakeOutput();
+				}
+				activeAction.dispose();
+			});
+	} catch (error) {
+		vscode.window.showWarningMessage(`cmake-build: ${error}`);
+	}
 }
 
 async function doCmakeAction(action: CMakeAction) {
@@ -94,7 +130,7 @@ async function doCmakeAction(action: CMakeAction) {
 	});
 }
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext): Promise<CMakeToolsBuildWrapper.api> {
 	api.getCMakeToolsApi(api.Version.v2).then((cmake) => {
 		if (cmake === undefined) {
 			vscode.window.showErrorMessage("cmake-build: can't get API of CMake Tools extension.");
@@ -109,14 +145,19 @@ export function activate(context: vscode.ExtensionContext) {
 		cmakeProjectUri = vscode.Uri.file(path);
 	});
 
-	context.subscriptions.push(vscode.commands.registerCommand('cmake-tools-build-wrapper.clean', () => { doCmakeAction(CMakeAction.Clean); }));
-	context.subscriptions.push(vscode.commands.registerCommand('cmake-tools-build-wrapper.build', () => { doCmakeAction(CMakeAction.Build); }));
-	context.subscriptions.push(vscode.commands.registerCommand('cmake-tools-build-wrapper.install', () => { doCmakeAction(CMakeAction.Install); }));
-	context.subscriptions.push(vscode.commands.registerCommand('cmake-tools-build-wrapper.configure', () => { doCmakeAction(CMakeAction.Configure); }));
-	context.subscriptions.push(vscode.commands.registerCommand('cmake-tools-build-wrapper.reconfigure', () => { doCmakeAction(CMakeAction.Reconfigure); }));
-	context.subscriptions.push(vscode.commands.registerCommand('cmake-tools-build-wrapper.output', () => { openCMakeOutput(); }));
+	context.subscriptions.push(vscode.commands.registerCommand(`${CMakeToolsBuildWrapper.EXTENSION_NAME}.clean`, () => { doCmakeAction(CMakeAction.Clean); }));
+	context.subscriptions.push(vscode.commands.registerCommand(`${CMakeToolsBuildWrapper.EXTENSION_NAME}.build`, () => { doCmakeAction(CMakeAction.Build); }));
+	context.subscriptions.push(vscode.commands.registerCommand(`${CMakeToolsBuildWrapper.EXTENSION_NAME}.install`, () => { doCmakeAction(CMakeAction.Install); }));
+	context.subscriptions.push(vscode.commands.registerCommand(`${CMakeToolsBuildWrapper.EXTENSION_NAME}.configure`, () => { doCmakeAction(CMakeAction.Configure); }));
+	context.subscriptions.push(vscode.commands.registerCommand(`${CMakeToolsBuildWrapper.EXTENSION_NAME}.reconfigure`, () => { doCmakeAction(CMakeAction.Reconfigure); }));
+	context.subscriptions.push(vscode.commands.registerCommand(`${CMakeToolsBuildWrapper.EXTENSION_NAME}.output`, () => { openCMakeOutput(); }));
 
 	extensionPath = context.extensionPath;
+	return {
+		getActiveActions(): Promise<string[]> {
+			return ActiveCMakeAction.getActiveActions();
+		}
+	};
 }
 
 export function deactivate() {

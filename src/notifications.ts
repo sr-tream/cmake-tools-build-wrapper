@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { CMakeToolsBuildWrapper } from './api';
 import { showNativeNotification, hideNativeNotification } from './notify-send';
 
 export enum NotifyType {
@@ -7,7 +8,7 @@ export enum NotifyType {
 }
 
 export async function showNotification(message: string, type: NotifyType = NotifyType.Success): Promise<void> {
-    const config = vscode.workspace.getConfiguration('cmake-tools-build-wrapper');
+    const config = vscode.workspace.getConfiguration(CMakeToolsBuildWrapper.EXTENSION_NAME);
     const defaultProvider = process.platform === 'linux' ? 'VSCode API/Native Notifications' : 'VSCode API';
     let provider = config.get<string>('notifyProvider', defaultProvider);
     if (provider === 'Default') {
