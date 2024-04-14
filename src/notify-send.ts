@@ -2,31 +2,25 @@ import * as vscode from 'vscode';
 import { exec } from 'child_process';
 import { getExtensionPath } from './extension';
 import { NotifyType } from './notifications';
+import { Config } from './config';
 
 let notifyLastId = -1;
 let notifyLastCmd = '';
 
-export async function showNativeNotification(config: vscode.WorkspaceConfiguration, message: string, type: NotifyType): Promise<boolean> {
-    const command = config.get<string>('notifySend.Path', 'notify-send');
-    const time = config.get<number>('notifySend.ShowTime', 10000);
+export async function showNativeNotification(config: Config.NotifySend, message: string, type: NotifyType): Promise<boolean> {
     const extensionPath = getExtensionPath();
 
-    let cmd = `${command} -p -a "${vscode.env.appName}: cmake-build"`;
-    let crit = false;
+    let cmd = `${config.Path} -p -a "${vscode.env.appName}: cmake-build"`;
     if (type === NotifyType.Success) {
-        const icon = config.get<string>('notifySend.IconSuccess', '');
-        if (icon.length !== 0) {
-            cmd += ` -i "${icon}"`;
+        if (config.IconSuccess.length !== 0) {
+            cmd += ` -i "${config.IconSuccess}"`;
         }
         else if ((await extensionPath).length !== 0) {
             cmd += ` -i "${extensionPath}/icons/success.svg"`;
         }
     } else {
-        const icon = config.get<string>('notifySend.IconFails', '');
-        crit = config.get<boolean>('notifySend.CriticalUrgencyForFails', false);
-
-        if (icon.length !== 0) {
-            cmd += ` -i "${icon}"`;
+        if (config.IconFails.length !== 0) {
+            cmd += ` -i "${config.IconFails}"`;
         }
         else if ((await extensionPath).length !== 0) {
             cmd += ` -i "${extensionPath}/icons/fail.svg"`;
@@ -35,7 +29,8 @@ export async function showNativeNotification(config: vscode.WorkspaceConfigurati
 
     cmd += ` "CMake Tools" "${message}"`;
 
-    exec(`${cmd} -t ${time} -u ${crit ? 'critical' : 'normal'}`, (error, stdout, stderr) => {
+    const critical = config.CriticalUrgencyForFails && type === NotifyType.Fail;
+    exec(`${cmd} -t ${config.ShowTime} -u ${critical ? 'critical' : 'normal'}`, (error, stdout, stderr) => {
         if (error) {
             vscode.window.showErrorMessage('cmake-build: Failed to send notification: ' + error);
             return;

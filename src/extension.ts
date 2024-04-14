@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as api from 'vscode-cmake-tools';
 import { CMakeToolsBuildWrapper } from './api';
 import { showNotification, NotifyType } from './notifications';
+import { Config } from './config';
 
 let cmakeToolsApi: api.CMakeToolsApi | undefined = undefined;
 let cmakeProjectUri: vscode.Uri | undefined = undefined;
@@ -12,16 +13,15 @@ export async function getExtensionPath(): Promise<string> {
 	return extensionPath || "";
 }
 
-async function openCMakeOutput(): Promise<void> {
-	const config = vscode.workspace.getConfiguration(CMakeToolsBuildWrapper.EXTENSION_NAME);
+async function openCMakeOutput(config?: Config.Global): Promise<void> {
+	if (config === undefined) config = Config.read();
 	const baseCommand = 'workbench.action.output.show.extension-output-ms-vscode.cmake-tools';
 	vscode.commands.getCommands(true).then((commands) => {
-		const outputView = config.get<string>('outputView', '');
-		if (outputView.length > 0) {
+		if (config.outputView.length > 0) {
 			for (const command of commands) {
 				if (!command.startsWith(baseCommand)) { continue; }
 
-				if (command.endsWith(`-${outputView}`)) {
+				if (command.endsWith(`-${config.outputView}`)) {
 					vscode.commands.executeCommand(command);
 					return;
 				}
@@ -75,23 +75,20 @@ class ActiveCMakeAction implements vscode.Disposable {
 async function withErrorCheck(name: string, action: () => Promise<void>) {
 	try {
 		const activeAction = new ActiveCMakeAction(name);
-		const config = vscode.workspace.getConfiguration(CMakeToolsBuildWrapper.EXTENSION_NAME);
+		const config = Config.read();
 		action()
 			.then(() => {
-				const notifySuccess = config.get<boolean>('notifySuccess', false);
-				if (notifySuccess) {
-					showNotification(`${name} completed`, NotifyType.Success);
+				if (config.notifySuccess) {
+					showNotification(config, `${name} completed`, NotifyType.Success);
 				}
 				activeAction.dispose();
 			})
 			.catch((error) => {
-				const notifyFails = config.get<boolean>('notifyFails', false);
-				if (notifyFails) {
-					showNotification(`${error}`, NotifyType.Fail);
+				if (config.notifyFails) {
+					showNotification(config, `${error}`, NotifyType.Fail);
 				}
-				const openOutput = config.get<boolean>('openOutput', false);
-				if (openOutput) {
-					openCMakeOutput();
+				if (config.openOutput) {
+					openCMakeOutput(config);
 				}
 				activeAction.dispose();
 			});

@@ -6,6 +6,7 @@ export namespace CMakeToolsBuildWrapper {
 
     export interface api {
         getActiveActions(): Promise<string[]>;
+        // TODO: Event to automatically notify about changes in active actions
     }
 
     export async function getAPI(): Promise<api | undefined> {

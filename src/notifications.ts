@@ -1,19 +1,16 @@
 import * as vscode from 'vscode';
 import { CMakeToolsBuildWrapper } from './api';
 import { showNativeNotification, hideNativeNotification } from './notify-send';
+import { Config } from './config';
 
 export enum NotifyType {
     Success,
     Fail
 }
 
-export async function showNotification(message: string, type: NotifyType = NotifyType.Success): Promise<void> {
-    const config = vscode.workspace.getConfiguration(CMakeToolsBuildWrapper.EXTENSION_NAME);
-    const defaultProvider = process.platform === 'linux' ? 'VSCode API/Native Notifications' : 'VSCode API';
-    let provider = config.get<string>('notifyProvider', defaultProvider);
-    if (provider === 'Default') {
-        provider = defaultProvider;
-    }
+export async function showNotification(config: Config.Global, message: string, type: NotifyType = NotifyType.Success): Promise<void> {
+    const defaultProvider = process.platform === 'linux' ? Config.NotifyProvider.VSCodeAndNotifySend : Config.NotifyProvider.VSCode;
+    const provider = config.notifyProvider === Config.NotifyProvider.Default ? defaultProvider : config.notifyProvider;
 
     // Hide previous system notification
     // Need to avoid manual closing:
@@ -26,7 +23,7 @@ export async function showNotification(message: string, type: NotifyType = Notif
 
     let notificationShowed = false;
     if (provider.startsWith('Custom provider') && !needShowSystemNotification) {
-        notificationShowed = await showCustomNotification(config, message);
+        notificationShowed = await showCustomNotification(config.customNotifyProvider, message);
     }
 
     if (provider.startsWith('VSCode API') && !needShowSystemNotification) {
@@ -34,23 +31,21 @@ export async function showNotification(message: string, type: NotifyType = Notif
     }
 
     if (needShowSystemNotification && !notificationShowed) {
-        showNativeNotification(config, message, type);
+        showNativeNotification(config.notifySend, message, type);
     }
 }
 
-async function showCustomNotification(config: vscode.WorkspaceConfiguration, message: string): Promise<boolean> {
-    const command = config.get<string>('customNotifyProvider.ProviderCommand', '');
-
-    if (command.length !== 0) {
-        const argsOrdering = config.get<string>('customNotifyProvider.Arguments', '');
-        if (argsOrdering === 'messageOnly') {
-            vscode.commands.executeCommand(command, `CMake Tools: ${message}`);
+async function showCustomNotification(config: Config.CustomNotifyProvider, message: string): Promise<boolean> {
+    if (config.ProviderCommand.length !== 0) {
+        const argsOrdering = config.Arguments;
+        if (argsOrdering === Config.CustomNotifyProviderArguments.messageOnly) {
+            vscode.commands.executeCommand(config.ProviderCommand, `CMake Tools: ${message}`);
         }
-        else if (argsOrdering === 'titleThenMessage') {
-            vscode.commands.executeCommand(command, "CMake Tools", `${message}`);
+        else if (argsOrdering === Config.CustomNotifyProviderArguments.titleThenMessage) {
+            vscode.commands.executeCommand(config.ProviderCommand, "CMake Tools", `${message}`);
         }
-        else if (argsOrdering === 'messageThenTitle') {
-            vscode.commands.executeCommand(command, `${message}`, "CMake Tools");
+        else if (argsOrdering === Config.CustomNotifyProviderArguments.messageThenTitle) {
+            vscode.commands.executeCommand(config.ProviderCommand, `${message}`, "CMake Tools");
         }
         return true;
     }
