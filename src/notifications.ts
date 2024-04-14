@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { CMakeToolsBuildWrapper } from './api';
 import { showNativeNotification, hideNativeNotification } from './notify-send';
 import { Config } from './config';
 
