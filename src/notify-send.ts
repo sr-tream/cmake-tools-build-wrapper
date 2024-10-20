@@ -16,14 +16,14 @@ export async function showNativeNotification(config: Config.NotifySend, message:
             cmd += ` -i "${config.IconSuccess}"`;
         }
         else if ((await extensionPath).length !== 0) {
-            cmd += ` -i "${extensionPath}/icons/success.svg"`;
+            cmd += ` -i "${await extensionPath}/icons/success.svg"`;
         }
     } else {
         if (config.IconFails.length !== 0) {
             cmd += ` -i "${config.IconFails}"`;
         }
         else if ((await extensionPath).length !== 0) {
-            cmd += ` -i "${extensionPath}/icons/fail.svg"`;
+            cmd += ` -i "${await extensionPath}/icons/fail.svg"`;
         }
     }
 

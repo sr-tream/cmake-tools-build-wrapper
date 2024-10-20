@@ -4,7 +4,7 @@
   "publisher": "sr-team",
   "description": "Wrapper for cmake-tools to open output on build fails",
   "repository": "https://github.com/sr-tream/cmake-tools-build-wrapper",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "keywords": [
     "cmake",
     "build",
