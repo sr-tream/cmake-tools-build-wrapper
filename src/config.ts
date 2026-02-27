@@ -47,6 +47,7 @@ export namespace Config {
         notifyProvider: NotifyProvider | string,
         notifySend: NotifySend,
         customNotifyProvider: CustomNotifyProvider,
+        cmakeExtensionName: string,
     }
     export const DEFAULT_GLOBAL: Global = {
         openOutput: true,
@@ -56,6 +57,7 @@ export namespace Config {
         notifyProvider: NotifyProvider.Default,
         notifySend: DEFAULT_NOTIFY_SEND,
         customNotifyProvider: DEFAULT_CUSTOM_NOTIFY_PROVIDER,
+        cmakeExtensionName: 'ms-vscode.cmake-tools',
     }
 
     export function read(): Global {

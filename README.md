@@ -12,8 +12,12 @@ This wrapper adds more feedback from CMake, like show notifications when build f
 
 (All of them are configurable)
 
+## CMake Tools Fork Support
+
+By default this extension integrates with `ms-vscode.cmake-tools`. To use a compatible fork instead, set `cmake-tools-build-wrapper.cmakeExtensionName` to the fork's extension ID and reload the window.
+
 ## Usage
-1. Install the [CMake Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools) extension;
+1. Install the [CMake Tools](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cmake-tools) extension or a compatible fork;
 2. Install this extension;
 3. Configure your shortcuts to call CMake commands via this extension:
     - `cmake-build: Build` (default shortcut is `Ctrl+B`);

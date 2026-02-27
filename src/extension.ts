@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as api from 'vscode-cmake-tools';
+import type * as api from 'vscode-cmake-tools';
 import { CMakeToolsBuildWrapper } from './api';
 import { showNotification, NotifyType } from './notifications';
 import { Config } from './config';
@@ -15,7 +15,7 @@ export async function getExtensionPath(): Promise<string> {
 
 async function openCMakeOutput(config?: Config.Global): Promise<void> {
 	if (config === undefined) config = Config.read();
-	const baseCommand = 'workbench.action.output.show.extension-output-ms-vscode.cmake-tools';
+	const baseCommand = `workbench.action.output.show.extension-output-${config.cmakeExtensionName}`;
 	vscode.commands.getCommands(true).then((commands) => {
 		if (config.outputView.length > 0) {
 			for (const command of commands) {
@@ -127,20 +127,44 @@ async function doCmakeAction(action: CMakeAction) {
 	});
 }
 
-export async function activate(context: vscode.ExtensionContext): Promise<CMakeToolsBuildWrapper.api> {
-	api.getCMakeToolsApi(api.Version.v2).then((cmake) => {
-		if (cmake === undefined) {
-			vscode.window.showErrorMessage("cmake-build: can't get API of CMake Tools extension.");
-			return;
-		}
+async function resolveCMakeToolsApi(): Promise<api.CMakeToolsApi | undefined> {
+	const config = Config.read();
+	const extensionId = config.cmakeExtensionName;
+	const ext = vscode.extensions.getExtension<api.CMakeToolsExtensionExports>(extensionId);
+	if (!ext) {
+		vscode.window.showWarningMessage(
+			`cmake-build: extension '${extensionId}' is not installed. ` +
+			`Install it or set 'cmake-tools-build-wrapper.cmakeExtensionName' to the correct extension ID.`);
+		return undefined;
+	}
+	const exports = await ext.activate();
+	return exports.getApi(2 as api.Version);
+}
 
-		cmakeToolsApi = cmake;
+export async function activate(context: vscode.ExtensionContext): Promise<CMakeToolsBuildWrapper.api> {
+	resolveCMakeToolsApi().then((cmakeApi) => {
+		if (cmakeApi === undefined)
+			return;
+
+		cmakeToolsApi = cmakeApi;
 		cmakeProjectWatcher = cmakeToolsApi.onActiveProjectChanged((projectUri) => {
 			cmakeProjectUri = projectUri;
 		});
 		const path = cmakeToolsApi.getActiveFolderPath();
 		cmakeProjectUri = vscode.Uri.file(path);
 	});
+
+	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration((event) => {
+		if (event.affectsConfiguration(`${CMakeToolsBuildWrapper.EXTENSION_NAME}.cmakeExtensionName`)) {
+			vscode.window.showInformationMessage(
+				'cmake-build: Reload the window to apply the new CMake Tools extension.',
+				'Reload Window'
+			).then(selection => {
+				if (selection === 'Reload Window')
+					vscode.commands.executeCommand('workbench.action.reloadWindow');
+			});
+		}
+	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand(`${CMakeToolsBuildWrapper.EXTENSION_NAME}.clean`, () => { doCmakeAction(CMakeAction.Clean); }));
 	context.subscriptions.push(vscode.commands.registerCommand(`${CMakeToolsBuildWrapper.EXTENSION_NAME}.build`, () => { doCmakeAction(CMakeAction.Build); }));

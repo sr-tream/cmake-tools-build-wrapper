@@ -4,7 +4,7 @@
   "publisher": "sr-team",
   "description": "Wrapper for cmake-tools to open output on build fails",
   "repository": "https://github.com/sr-tream/cmake-tools-build-wrapper",
-  "version": "0.0.4",
+  "version": "0.1.0",
   "icon": "logo.png",
   "keywords": [
     "cmake",
@@ -181,6 +181,17 @@
             "order": 4
           }
         }
+      },
+      {
+        "title": "CMake Tools Integration",
+        "properties": {
+          "cmake-tools-build-wrapper.cmakeExtensionName": {
+            "type": "string",
+            "default": "ms-vscode.cmake-tools",
+            "markdownDescription": "Extension ID of the CMake Tools extension to integrate with.\n\nChange this to use a fork of CMake Tools. A window reload is required after changing this setting.",
+            "order": 0
+          }
+        }
       }
     ]
   },
@@ -191,7 +202,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/vscode": "^1.78.0",
@@ -203,12 +215,7 @@
     "typescript": "^5.3.3",
     "@vscode/test-cli": "^0.0.8",
     "@vscode/test-electron": "^2.3.9",
-    "vsce": "^2.15.0"
-  },
-  "dependencies": {
+    "@vscode/vsce": "^2.15.0",
     "vscode-cmake-tools": "^1.1.0"
-  },
-  "extensionDependencies": [
-    "ms-vscode.cmake-tools"
-  ]
+  }
 }
